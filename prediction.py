@@ -1811,17 +1811,21 @@ def main(ctx_factory=cl.create_some_context,
     # some utility functions
     def vol_min_loc(x):
         from grudge.op import nodal_min_loc
-        return actx.to_numpy(nodal_min_loc(discr, dd_vol_fluid, x))[()]
+        return actx.to_numpy(
+            nodal_min_loc(discr, dd_vol_fluid, x, initial=np.inf))[()]
 
     def vol_max_loc(x):
         from grudge.op import nodal_max_loc
-        return actx.to_numpy(nodal_max_loc(discr, dd_vol_fluid, x))[()]
+        return actx.to_numpy(
+            nodal_max_loc(discr, dd_vol_fluid, x, initial=-np.inf))[()]
 
     def vol_min(x):
-        return actx.to_numpy(nodal_min(discr, dd_vol_fluid, x))[()]
+        return actx.to_numpy(
+            nodal_min(discr, dd_vol_fluid, x, initial=np.inf))[()]
 
     def vol_max(x):
-        return actx.to_numpy(nodal_max(discr, dd_vol_fluid, x))[()]
+        return actx.to_numpy(
+            nodal_max(discr, dd_vol_fluid, x, initial=-np.inf))[()]
 
     def my_write_status(cv, dv, wall_temperature, dt, cfl_fluid, cfl_wall):
         status_msg = (f"-------- dt = {dt:1.3e},"
@@ -2148,13 +2152,13 @@ def main(ctx_factory=cl.create_some_context,
             ts_field = cfl*my_get_wall_timestep(
                 discr=discr, wall_state=wall_state, wall_model=wall_model)
             mydt = wall_state.array_context.to_numpy(nodal_min(
-                    discr, wall_volume_dd, ts_field))[()]
+                    discr, wall_volume_dd, ts_field, initial=np.inf))[()]
         else:
             from grudge.op import nodal_max
             ts_field = mydt/my_get_wall_timestep(
                 discr=discr, wall_state=wall_state, wall_model=wall_model)
             cfl = wall_state.array_context.to_numpy(nodal_max(
-                    discr, wall_volume_dd, ts_field))[()]
+                    discr, wall_volume_dd, ts_field, initial=0.))[()]
 
         return ts_field, cfl, mydt
 
@@ -2213,13 +2217,13 @@ def main(ctx_factory=cl.create_some_context,
             ts_field = cfl*my_get_viscous_timestep(
                 discr=discr, fluid_state=fluid_state, alpha=alpha)
             mydt = fluid_state.array_context.to_numpy(nodal_min(
-                    discr, fluid_volume_dd, ts_field))[()]
+                    discr, fluid_volume_dd, ts_field, initial=np.inf))[()]
         else:
             from grudge.op import nodal_max
             ts_field = mydt/my_get_viscous_timestep(
                 discr=discr, fluid_state=fluid_state, alpha=alpha)
             cfl = fluid_state.array_context.to_numpy(nodal_max(
-                    discr, fluid_volume_dd, ts_field))[()]
+                    discr, fluid_volume_dd, ts_field, initial=0.))[()]
 
         return ts_field, cfl, mydt
 
