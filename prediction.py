@@ -913,7 +913,7 @@ def main(ctx_factory=cl.create_some_context,
     health_pres_min = 1.0e-1
     health_pres_max = 2.0e6
     health_temp_min = 1.0
-    health_temp_max = 5000
+    health_temp_max = 5000.
     health_mass_frac_min = -10
     health_mass_frac_max = 10
 
