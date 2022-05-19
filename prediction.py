@@ -2405,7 +2405,7 @@ def main(ctx_factory=cl.create_some_context,
             fluid_boundaries, wall_boundaries,
             fluid_state, wall_temperature,
             time=t,
-            use_av=False,
+            use_av=True,
             av_kwargs={
                 "alpha": alpha_field,
                 "s0": s0_sc,
