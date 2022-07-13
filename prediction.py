@@ -957,6 +957,7 @@ def main(ctx_factory=cl.create_some_context,
 
     # wall stuff
     wall_penalty_amount = 25
+    wall_time_scale = 250
 
     # initialize the ignition spark
     ignition = False
@@ -1149,6 +1150,10 @@ def main(ctx_factory=cl.create_some_context,
             wall_penalty_amount = input_data["wall_penalty_amount"]
         except KeyError:
             pass
+        try:
+            wall_time_scale = input_data["wall_time_scale"]
+        except KeyError:
+            pass
 
     # param sanity check
     allowed_integrators = ["rk4", "euler", "lsrk54", "lsrk144", "compiled_lsrk54"]
@@ -1285,8 +1290,6 @@ def main(ctx_factory=cl.create_some_context,
     wall_surround_cp = 470
     wall_surround_kappa = 48
 
-    wall_time_scale = 250
-
     if rank == 0:
         print("\n#### Simluation material properties: ####")
         print(f"\tmu = {mu}")
@@ -1305,6 +1308,8 @@ def main(ctx_factory=cl.create_some_context,
         print(f"\tWall surround density = {wall_surround_rho}")
         print(f"\tWall surround cp = {wall_surround_cp}")
         print(f"\tWall surround kappa = {wall_surround_kappa}")
+        print(f"\tWall time scale = {wall_time_scale}")
+        print(f"\tWall penalty = {wall_penalty_amount}")
         print("#### Simluation material properties: ####")
 
     spec_diffusivity = spec_diff * np.ones(nspecies)
@@ -1764,6 +1769,9 @@ def main(ctx_factory=cl.create_some_context,
         # Set the current state from time 0
         target_cv = current_cv
 
+    force_evaluation(actx, current_cv)
+    force_evaluation(actx, target_cv)
+
     current_fluid_state = create_fluid_state(current_cv, temperature_seed)
     target_fluid_state = create_fluid_state(target_cv, temperature_seed)
     temperature_seed = current_fluid_state.temperature
@@ -1923,8 +1931,8 @@ def main(ctx_factory=cl.create_some_context,
 
     def my_write_status(cv, dv, wall_temperature, dt, cfl_fluid, cfl_wall):
         status_msg = (f"-------- dt = {dt:1.3e},"
-                      f" cfl_fluid = {cfl_fluid:1.4f}"
-                      f" cfl_wall = {cfl_wall:1.4f}")
+                      f" cfl_fluid = {cfl_fluid:1.8f}"
+                      f" cfl_wall = {cfl_wall:1.8f}")
         #temperature = thaw(freeze(dv.temperature, actx), actx)
         #pressure = thaw(freeze(dv.pressure, actx), actx)
         #wall_temp = thaw(freeze(wall_temperature, actx), actx)
@@ -2443,6 +2451,10 @@ def main(ctx_factory=cl.create_some_context,
                     t=t, dt=dt, cfl=current_cfl, t_final=t_final,
                     constant_cfl=constant_cfl, wall_volume_dd=dd_vol_wall)
 
+                cfl_wall = cfl_wall*wall_time_scale
+                dt_wall = dt_wall/wall_time_scale
+                ts_field_wall = ts_field_wall/wall_time_scale
+
             """
             # adjust time for constant cfl, use the smallest timescale
             dt_const_cfl = 100.
@@ -2609,6 +2621,9 @@ def main(ctx_factory=cl.create_some_context,
         wall_state=current_wall_temperature, wall_model=wall_model,
         t=current_t, dt=current_dt, cfl=current_cfl,
         t_final=t_final, constant_cfl=constant_cfl, wall_volume_dd=dd_vol_wall)
+    cfl_wall = cfl_wall*wall_time_scale
+    dt_wall = dt_wall/wall_time_scale
+    ts_field_wall = ts_field_wall/wall_time_scale
     my_write_status(dt=dt, cfl_fluid=cfl, cfl_wall=cfl_wall,
                     dv=final_dv, cv=current_cv,
                     wall_temperature=current_wall_temperature)
