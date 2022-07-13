@@ -1769,12 +1769,12 @@ def main(ctx_factory=cl.create_some_context,
         # Set the current state from time 0
         target_cv = current_cv
 
-    force_evaluation(actx, current_cv)
-    force_evaluation(actx, target_cv)
-
-    current_fluid_state = create_fluid_state(current_cv, temperature_seed)
-    target_fluid_state = create_fluid_state(target_cv, temperature_seed)
+    current_fluid_state = make_fluid_state(current_cv, gas_model, temperature_seed)
+    target_fluid_state = make_fluid_state(target_cv, gas_model, temperature_seed)
     temperature_seed = current_fluid_state.temperature
+
+    force_evaluation(actx, current_fluid_state)
+    force_evaluation(actx, target_fluid_state)
 
     stepper_state = make_obj_array([current_cv, current_wall_temperature,
                                     temperature_seed])
@@ -2574,9 +2574,8 @@ def main(ctx_factory=cl.create_some_context,
                 "alpha": alpha_field,
                 "s0": s0_sc,
                 "kappa": kappa_sc,
-                "boundary_kwargs": {
-                    "time": t,
-                    "gas_model": gas_model}},
+                "time": t,
+                "gas_model": gas_model},
             wall_time_scale=wall_time_scale, wall_penalty_amount=wall_penalty_amount,
             quadrature_tag=quadrature_tag)
 
